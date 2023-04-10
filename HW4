@@ -1,0 +1,112 @@
+def parse(tokens):
+    global current_token
+    current_token = tokens[0]
+    parse_stmt_list(tokens)
+    return current_token == None
+
+def match(token_type):
+    global current_token
+    if current_token == token_type:
+        if len(tokens) > 1:
+            tokens = tokens[1:]
+            current_token = tokens[0]
+        else:
+            current_token = None
+    else:
+        raise ValueError(f"Expected {token_type}, found {current_token}")
+
+def parse_stmt_list(tokens):
+    parse_stmt(tokens)
+    while current_token == ';':
+        match(';')
+        parse_stmt(tokens)
+
+def parse_stmt(tokens):
+    global current_token
+    if current_token == 'if':
+        parse_if_stmt(tokens)
+    elif current_token == '{':
+        parse_block(tokens)
+    elif current_token == 'while':
+        parse_while_loop(tokens)
+    else:
+        parse_expr(tokens)
+
+def parse_if_stmt(tokens):
+    match('if')
+    match('(')
+    parse_bool_expr(tokens)
+    match(')')
+    if current_token == '{':
+        parse_block(tokens)
+    else:
+        parse_stmt(tokens)
+    if current_token == 'else':
+        match('else')
+        if current_token == '{':
+            parse_block(tokens)
+        else:
+            parse_stmt(tokens)
+
+def parse_block(tokens):
+    match('{')
+    parse_stmt_list(tokens)
+    match('}')
+
+def parse_while_loop(tokens):
+    match('while')
+    match('(')
+    parse_bool_expr(tokens)
+    match(')')
+    if current_token == '{':
+        parse_block(tokens)
+    else:
+        parse_stmt(tokens)
+        match(';')
+
+def parse_expr(tokens):
+    parse_term(tokens)
+    while current_token in ['+', '-', '*', '/', '%']:
+        match(current_token)
+        parse_term(tokens)
+
+def parse_term(tokens):
+    parse_fact(tokens)
+    while current_token in ['*', '/', '%']:
+        match(current_token)
+        parse_fact(tokens)
+
+def parse_fact(tokens):
+    global current_token
+    if current_token == 'ID' or current_token == 'INT_LIT' or current_token == 'FLOAT_LIT':
+        match(current_token)
+    elif current_token == '(':
+        match('(')
+        parse_expr(tokens)
+        match(')')
+    else:
+        raise ValueError(f"Unexpected token: {current_token}")
+
+def parse_bool_expr(tokens):
+    parse_bterm(tokens)
+    while current_token in ['>', '<', '>=', '<=']:
+        match(current_token)
+        parse_bterm(tokens)
+
+def parse_bterm(tokens):
+    parse_band(tokens)
+    while current_token in ['==', '!=']:
+        match(current_token)
+        parse_band(tokens)
+
+def parse_band(tokens):
+    parse_bor(tokens)
+    while current_token == '&&':
+        match('&&')
+        parse_bor(tokens)
+
+def parse_bor(tokens):
+    parse_expr(tokens)
+    while current_token == '||':
+        match('||')
+        parse_expr(tokens)
